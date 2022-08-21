@@ -57,14 +57,15 @@ if __name__ == "__main__":
     total_duration = len(signal_numpy)/frame_rate
     n_section = math.ceil(total_duration/(section_len/1000))
     sample_per_section = int((section_len/1000)*frame_rate)
+    filtered_signal = bandpass_filter(signal_numpy)
     for i in range(0, n_section):
         section = signal_numpy[i * sample_per_section: min((i+1) * sample_per_section, len(signal_numpy))] # chop into section
-        filtered_signal = bandpass_filter(section)
-        freq, signal_amp = generate_freq_spectrum(filtered_signal, frame_rate)  # fft
+        freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
         peak_freq = numpy.argmax(signal_amp)    # get peak freq
         note_name = frequency_to_note(freq[peak_freq])  # convert freq to note
         print(note_name)
-
+    plt.plot(signal_numpy)
+    plt.show()
     # plt.subplot(1, 2, 1)  # row 1, col 2 index 1
     # plt.plot(freq, fourier)
     # peak_index = find_max_peak(fourier, freq)
