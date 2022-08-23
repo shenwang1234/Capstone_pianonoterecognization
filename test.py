@@ -7,11 +7,11 @@ from scipy import fft
 import math
 
 
-note_string = ['C', 'C#/Db' , 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B' ]
+note_string = ['C', 'C#/Db' , 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
 
 
-def path_to_numpy(path):
-    song = AudioSegment.from_file(path)
+def path_to_numpy(file_path):
+    song = AudioSegment.from_file(file_path)
     return song.get_array_of_samples(), song.frame_rate
 
 
@@ -43,8 +43,8 @@ def bandpass_filter(raw_signal):
     return filtered
 
 
-def frequency_to_note(peak_freq):
-    log_peak_freq = math.log(peak_freq, 2)
+def frequency_to_note(frequency):
+    log_peak_freq = math.log(frequency, 2)
     index = round((log_peak_freq-3.94802101634847)/0.0833334184464846)
     octave_num, note = index // 12, int(index % 12 - 1)
     return note_string[note] + " " + str(octave_num)
@@ -53,18 +53,20 @@ def frequency_to_note(peak_freq):
 if __name__ == "__main__":
     path = "Capstone piano test 1.m4a"
     signal_numpy, frame_rate = path_to_numpy(path)
-    section_len = 500 # length of each section in s
+    section_len = 500  # length of each section in s
     total_duration = len(signal_numpy)/frame_rate
     n_section = math.ceil(total_duration/(section_len/1000))
     sample_per_section = int((section_len/1000)*frame_rate)
     filtered_signal = bandpass_filter(signal_numpy)
     for i in range(0, n_section):
-        section = signal_numpy[i * sample_per_section: min((i+1) * sample_per_section, len(signal_numpy))] # chop into section
+        section = signal_numpy[i * sample_per_section: min((i+1) * sample_per_section, len(signal_numpy))]  # chop into section
         freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
         peak_freq = numpy.argmax(signal_amp)    # get peak freq
         note_name = frequency_to_note(freq[peak_freq])  # convert freq to note
-        print(note_name)
-    plt.plot(signal_numpy)
+        plt.axvline(x=min((i + 1) * sample_per_section, len(signal_numpy)), color='r', linewidth=0.5, linestyle="-", zorder=10)  # lines for separating segments
+        plt.text(i * sample_per_section, 0, note_name)  # plot note name
+    #x_axis = np.linspace(0, audio_length/frame_rate, audio_length)
+    plt.plot(signal_numpy, zorder=0)
     plt.show()
     # plt.subplot(1, 2, 1)  # row 1, col 2 index 1
     # plt.plot(freq, fourier)
