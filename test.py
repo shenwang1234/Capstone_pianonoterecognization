@@ -38,7 +38,7 @@ def generate_freq_spectrum(x, sf):
 
 
 def bandpass_filter(raw_signal):
-    numerator, denominator = signal.butter(5, [15, 8000], 'bandpass', fs=48000)
+    numerator, denominator = signal.butter(5, [15, 8000], 'bandpass', fs=48000) #order 5 keep frequencies between 15hz and 8000hz. Diff not visiable
     filtered = signal.lfilter(numerator, denominator, raw_signal)
     return filtered
 
@@ -47,26 +47,32 @@ def frequency_to_note(frequency):
     log_peak_freq = math.log(frequency, 2)
     index = round((log_peak_freq-3.94802101634847)/0.0833334184464846)
     octave_num, note = index // 12, int(index % 12 - 1)
-    return note_string[note] + " " + str(octave_num)
+    return note_string[note] + str(octave_num)
 
 
 if __name__ == "__main__":
     path = "Capstone piano test 1.m4a"
     signal_numpy, frame_rate = path_to_numpy(path)
-    section_len = 500  # length of each section in s
+    section_len = 500  # length of each section in ms
     total_duration = len(signal_numpy)/frame_rate
     n_section = math.ceil(total_duration/(section_len/1000))
     sample_per_section = int((section_len/1000)*frame_rate)
     filtered_signal = bandpass_filter(signal_numpy)
+    plt.subplot(1, 2, 1)  # row 1, col 2 index 1
     for i in range(0, n_section):
-        section = signal_numpy[i * sample_per_section: min((i+1) * sample_per_section, len(signal_numpy))]  # chop into section
+        section = filtered_signal[i * sample_per_section: min((i+1) * sample_per_section, len(filtered_signal))]  # chop into section
         freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
         peak_freq = numpy.argmax(signal_amp)    # get peak freq
+        print(peak_freq)
         note_name = frequency_to_note(freq[peak_freq])  # convert freq to note
         plt.axvline(x=min((i + 1) * sample_per_section, len(signal_numpy)), color='r', linewidth=0.5, linestyle="-", zorder=10)  # lines for separating segments
         plt.text(i * sample_per_section, 0, note_name)  # plot note name
-    #x_axis = np.linspace(0, audio_length/frame_rate, audio_length)
-    plt.plot(signal_numpy, zorder=0)
+    freq, signal_amp = generate_freq_spectrum(filtered_signal[48432:169512], frame_rate)
+    plt.plot(filtered_signal, zorder=0)
+    plt.subplot(1, 2, 2)  # row 1, col 2 index 1
+    x, y = generate_freq_spectrum(signal_numpy[48432:169512], frame_rate)
+    plt.plot(x,y)
+    #plt.plot(signal_numpy, zorder=0)
     plt.show()
     # plt.subplot(1, 2, 1)  # row 1, col 2 index 1
     # plt.plot(freq, fourier)
