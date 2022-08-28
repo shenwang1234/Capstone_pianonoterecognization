@@ -1,7 +1,10 @@
 import numpy.fft
+from scipy.io import wavfile
+import scipy.io
 from pydub import AudioSegment
 import matplotlib.pyplot as plt
 import numpy as np
+from os.path import join as pjoin
 from scipy import signal
 from scipy import fft
 import math
@@ -11,8 +14,11 @@ note_string = ['C', 'C#/Db' , 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A'
 
 
 def path_to_numpy(file_path):
-    song = AudioSegment.from_file(file_path)
-    return song.get_array_of_samples(), song.frame_rate
+    path = pjoin('/Users/fiona/PycharmProjects/Capstone_pianonoterecognization', file_path)
+    sampling_rate, signal = wavfile.read(path)
+    return sampling_rate, signal
+    #song = AudioSegment.from_file(file_path)
+    #return song.get_array_of_samples(), song.frame_rate
 
 
 def generate_freq_spectrum(x, sf):
@@ -51,14 +57,14 @@ def frequency_to_note(frequency):
 
 
 if __name__ == "__main__":
-    path = "Capstone piano test 1.m4a"
-    signal_numpy, frame_rate = path_to_numpy(path)
+    path = "Capstone piano test 1.wav"
+    frame_rate, signal_numpy = path_to_numpy(path)
     section_len = 500  # length of each section in ms
     total_duration = len(signal_numpy)/frame_rate
     n_section = math.ceil(total_duration/(section_len/1000))
     sample_per_section = int((section_len/1000)*frame_rate)
     filtered_signal = bandpass_filter(signal_numpy)
-    plt.subplot(1, 2, 1)  # row 1, col 2 index 1
+    #plt.subplot(1, 2, 1)  # row 1, col 2 index 1
     for i in range(0, n_section):
         section = filtered_signal[i * sample_per_section: min((i+1) * sample_per_section, len(filtered_signal))]  # chop into section
         freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
@@ -69,9 +75,9 @@ if __name__ == "__main__":
         plt.text(i * sample_per_section, 0, note_name)  # plot note name
     freq, signal_amp = generate_freq_spectrum(filtered_signal[48432:169512], frame_rate)
     plt.plot(filtered_signal, zorder=0)
-    plt.subplot(1, 2, 2)  # row 1, col 2 index 1
-    x, y = generate_freq_spectrum(signal_numpy[48432:169512], frame_rate)
-    plt.plot(x,y)
+    #plt.subplot(1, 2, 2)  # row 1, col 2 index 1
+    #x, y = generate_freq_spectrum(signal_numpy[48432:169512], frame_rate)
+    #plt.plot(x,y)
     #plt.plot(signal_numpy, zorder=0)
     plt.show()
     # plt.subplot(1, 2, 1)  # row 1, col 2 index 1
