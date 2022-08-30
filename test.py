@@ -1,3 +1,5 @@
+import os
+
 import numpy.fft
 from scipy.io import wavfile
 import scipy.io
@@ -14,11 +16,9 @@ note_string = ['C', 'C#/Db' , 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A'
 
 
 def path_to_numpy(file_path):
-    path = pjoin('/Users/fiona/PycharmProjects/Capstone_pianonoterecognization', file_path)
-    sampling_rate, signal = wavfile.read(path)
-    return sampling_rate, signal
-    #song = AudioSegment.from_file(file_path)
-    #return song.get_array_of_samples(), song.frame_rate
+    wav_file_path = pjoin(os.getcwd(), file_path)
+    sampling_rate, audio_signal = wavfile.read(wav_file_path)
+    return sampling_rate, audio_signal
 
 
 def generate_freq_spectrum(x, sf):
@@ -56,86 +56,32 @@ def frequency_to_note(frequency):
     return note_string[note] + str(octave_num)
 
 
+def slice_and_find_note(audio_signal, frame_rate, section_length):
+    total_duration = len(audio_signal) / frame_rate
+    n_section = math.ceil(total_duration / (section_length / 1000))  # number of sections in the audio file. secionts split using section len
+    sample_per_section = int((section_length / 1000) * frame_rate)
+    for i in range(0, n_section):  # calculate each section and plot it
+        section = audio_signal[i * sample_per_section: min((i + 1) * sample_per_section, len(filtered_signal))]  # chop into section
+        freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
+        peak_freq_index = numpy.argmax(signal_amp)  # get peak freq, return the index of the highest value
+        note_name = frequency_to_note(freq[peak_freq_index])
+        plt.text(i * sample_per_section, 0, note_name)  # plot note name
+        plt.axvline(x=min((i + 1) * sample_per_section, len(signal_numpy)), color='r', linewidth=0.5, linestyle="-",zorder=10)  # lines for separating segments
+        plt.text(i * sample_per_section, 2000, round(signal_amp[peak_freq_index]))  # plot the freq magnitude
+    plt.plot(audio_signal, zorder=0)
+
+def to_do():
+    #clean up
+    #interface mac mic
+    # research terminalgy
+    pass
+
+
 if __name__ == "__main__":
     path = "Capstone piano test 1.wav"
     frame_rate, signal_numpy = path_to_numpy(path)
-    section_len = 500  # length of each section in ms
-    total_duration = len(signal_numpy)/frame_rate
-    n_section = math.ceil(total_duration/(section_len/1000))
-    sample_per_section = int((section_len/1000)*frame_rate)
     filtered_signal = bandpass_filter(signal_numpy)
-    #plt.subplot(1, 2, 1)  # row 1, col 2 index 1
-    for i in range(0, n_section):
-        section = filtered_signal[i * sample_per_section: min((i+1) * sample_per_section, len(filtered_signal))]  # chop into section
-        freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
-        peak_freq = numpy.argmax(signal_amp)    # get peak freq
-        print(peak_freq)
-        note_name = frequency_to_note(freq[peak_freq])  # convert freq to note
-        plt.axvline(x=min((i + 1) * sample_per_section, len(signal_numpy)), color='r', linewidth=0.5, linestyle="-", zorder=10)  # lines for separating segments
-        plt.text(i * sample_per_section, 0, note_name)  # plot note name
-    freq, signal_amp = generate_freq_spectrum(filtered_signal[48432:169512], frame_rate)
-    plt.plot(filtered_signal, zorder=0)
-    #plt.subplot(1, 2, 2)  # row 1, col 2 index 1
-    #x, y = generate_freq_spectrum(signal_numpy[48432:169512], frame_rate)
-    #plt.plot(x,y)
-    #plt.plot(signal_numpy, zorder=0)
+    section_len = 500  # length of each section in ms
+    slice_and_find_note(filtered_signal, frame_rate, section_len)
     plt.show()
-    # plt.subplot(1, 2, 1)  # row 1, col 2 index 1
-    # plt.plot(freq, fourier)
-    # peak_index = find_max_peak(fourier, freq)
-    # plt.plot(peak_index[0], peak_index[1], marker="o", markersize=20, markeredgecolor="red", markerfacecolor="green")
-    # plt.subplot(1, 2, 2)  # row 1, col 2 index 1
-    # fourier = fft.fft(signal_numpy)
-    # plt.plot(signal_numpy)
-    # print(frequency_to_index(peak_index[0]))
-    # plt.show()
 
-    # plt.subplot(1, 2, 2)  # row 1, col 2 index 1
-    # plt.title("filtered")
-    # plt.plot(filtered)
-    # plt.subplot(1, 2, 1)  # row 1, col 2 index 1
-    # plt.title("un-filtered")
-    # plt.plot(one_three_sec)
-    # plt.show()
-
-
-
-
-    # frq, Y = frequency_spectrum(numeric_array[48432:169512], 44100) #X is half len of input signal len
-    # print(time.time()-start)
-    # #1-3.5s is roughly index 48432-169512
-    # data = [convert_to_decibel(i) for i in Y]
-    # plt.plot(frq, data, '.-')
-    # plt.xlabel('Freq (Hz)')
-    # plt.ylabel('|X(freq)|')
-    # plt.xscale('log')
-    # print(time.time()-start)
-    # peaks= find_peaks(data)
-    # print(len(peaks[0]))# need to change parameter for this. right now its getting 20045 peaks
-    # plt.show()
-    # start = time.time()
-    # song = AudioSegment.from_file("Capstone piano test 1.m4a") # this is a bytestring array with length 27243.
-    # song = song.low_pass_filter(8000)
-    #
-    # song = song.high_pass_filter(10)
-    # #each index correspond to a ms
-    #
-    # #this gets the dbfs of the signal and plot it against time(s)
-    # # SEGMENT_MS = 50
-    # # volume = [segment.dBFS for segment in song[::SEGMENT_MS]]
-    # # x_axis = np.arange(len(volume)) * (SEGMENT_MS / 1000)
-    # # plt.subplot(1, 2, 1) # row 1, col 2 index 1
-    # # plt.plot(x_axis, volume)
-    #
-    #
-    # #iphone voice memo sampling fequency 44.1kHz
-    # bit_depth = song.sample_width * 8 #sample_width is the number of bytes in each sample (same as Quantisation? )
-    # array_type = get_array_type(bit_depth)
-    # numeric_array = array.array(array_type, song._data)
-    # print(time.time()-start)
-    #
-    #
-    # # Time = np.linspace(0, len(numeric_array) / 44100, num=len(numeric_array))
-    # # x_coord = [i for i in range(len(numeric_array))]
-    # # plt.plot(Time, numeric_array)
-    # # plt.show()
