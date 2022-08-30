@@ -56,7 +56,7 @@ def frequency_to_note(frequency):
     return note_string[note] + str(octave_num)
 
 
-def slice_and_find_note(audio_signal, frame_rate, section_length):
+def slice_and_find_note(audio_signal, frame_rate, section_length, threshold):
     total_duration = len(audio_signal) / frame_rate
     n_section = math.ceil(total_duration / (section_length / 1000))  # number of sections in the audio file. secionts split using section len
     sample_per_section = int((section_length / 1000) * frame_rate)
@@ -65,7 +65,8 @@ def slice_and_find_note(audio_signal, frame_rate, section_length):
         freq, signal_amp = generate_freq_spectrum(section, frame_rate)  # fft
         peak_freq_index = numpy.argmax(signal_amp)  # get peak freq, return the index of the highest value
         note_name = frequency_to_note(freq[peak_freq_index])
-        plt.text(i * sample_per_section, 0, note_name)  # plot note name
+        if signal_amp[peak_freq_index] > threshold:
+            plt.text(i * sample_per_section, 0, note_name)  # plot note name
         plt.axvline(x=min((i + 1) * sample_per_section, len(signal_numpy)), color='r', linewidth=0.5, linestyle="-",zorder=10)  # lines for separating segments
         plt.text(i * sample_per_section, 2000, round(signal_amp[peak_freq_index]))  # plot the freq magnitude
     plt.plot(audio_signal, zorder=0)
@@ -82,6 +83,7 @@ if __name__ == "__main__":
     frame_rate, signal_numpy = path_to_numpy(path)
     filtered_signal = bandpass_filter(signal_numpy)
     section_len = 500  # length of each section in ms
-    slice_and_find_note(filtered_signal, frame_rate, section_len)
+    magnitude_threshold = 50
+    slice_and_find_note(filtered_signal, frame_rate, section_len, magnitude_threshold)
     plt.show()
 
